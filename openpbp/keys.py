@@ -7,7 +7,6 @@ these are:
 As these are common to all operations, we define them all here. Should they
 need to change, we can simply modify their definitions here.'''
 
-
 class Keyring(object):
     def __init__(self, pubkeys):
         '''
