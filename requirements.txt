@@ -1,0 +1,13 @@
+cffi==1.5.2
+configobj==5.0.6
+cryptography==1.2.3
+icalendar==3.9.2
+idna==2.0
+pyasn1==0.1.9
+pycparser==2.14
+pycrypto==2.6.1
+pycurl==7.43.0
+python-axolotl-curve25519==0.1
+python-dateutil==2.5.0
+pytz==2015.7
+six==1.10.0
