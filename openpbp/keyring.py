@@ -11,40 +11,39 @@ def generate_keypair() -> Tuple[bytes, bytes]:
     return private_key, public_key
 
 
-def keyring(*keys: List[str]) -> dict:
-    '''generate a keyring dict with the given keys'''
-    ring = {
-        'keys': [bytes_to_b64_string(k) for k in keys],
-        'signatures': [],
-    }
+class Keyring(object):
+    def __init__(self, keys: List[bytes]) -> None:
+        '''generate a keyring dict with the given keys'''
 
-    return ring
+        self.keys = [bytes_to_b64_string(k) for k in keys]
+        self.signatures = []  # type: List[str]
 
-
-def keyring_keystring(ring: dict) -> bytes:
-    '''return a bytes of the keyring values'''
-    return b''.join(b64_string_to_bytes(key)
-                    for key in ring['keys'])
+    def _keystring(self) -> bytes:
+        '''return a bytes of the keyring values'''
+        return b''.join(b64_string_to_bytes(key)
+                        for key in self.keys)
 
 
-def keyring_sign(ring: dict, private_key: bytes) -> str:
-    '''generate a signature for the given keyring'''
-    nonce = os.urandom(64)
-    keystring = keyring_keystring(ring)
-    sig = curve.calculateSignature(nonce, private_key, keystring)
-    return bytes_to_b64_string(sig)
+    def signature(self, private_key: bytes) -> str:
+        '''generate a signature for the given keyring'''
+        nonce = os.urandom(64)
+        sig = curve.calculateSignature(nonce, private_key, self._keystring())
+        return bytes_to_b64_string(sig)
 
 
-def keyring_verify_signature(ring:dict , public_key: str, signature: str):
-    return 0 is curve.verifySignature(b64_string_to_bytes(public_key),
-                                      keyring_keystring(ring),
-                                      b64_string_to_bytes(signature))
+    def _verify_sig(self, public_key: str, signature: str):
+        verification = curve.verifySignature(b64_string_to_bytes(public_key),
+                                            self._keystring(),
+                                            b64_string_to_bytes(signature))
+        return verification is 0
 
 
-def keyring_verify(ring: dict) -> bool:
-    keys = ring['keys']
-    sigs = ring['signatures']
-    verifications = (keyring_verify_signature(ring, key, signature)
-                     for key, signature in zip(keys, sigs))
+    def complete(self, ring: dict) -> bool:
+        key_signatures = zip(self.keys, self.signatures)
+        verifications = (self._verify_sig(public_key, signature)
+                         for public_key, signature in key_signatures)
 
-    return all(verifications)
+        return all(verifications)
+
+    def add_signature(self, signature):
+        assert(_verify_sig(s
