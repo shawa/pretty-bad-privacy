@@ -1,8 +1,8 @@
 import axolotl_curve25519 as curve
 import os
-import base64
 
 from utils import b64_string_to_bytes, bytes_to_b64_string
+
 
 def generate_keypair():
     private_key = curve.generatePrivateKey(os.urandom(32))
@@ -41,6 +41,7 @@ def keyring_verify_signature(ring, public_key_string, signature_string):
 def keyring_verify(ring):
     keys = ring['keys']
     sigs = ring['signatures']
-    verifications = (keyring_verify_signature(ring, k, s)
-                     for k, s in zip(keys, sigs))
+    verifications = (keyring_verify_signature(ring, key, signature)
+                     for key, signature in zip(keys, sigs))
+
     return all(verifications)

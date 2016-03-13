@@ -3,6 +3,8 @@ import keyring
 import axolotl_curve25519 as curve
 import os
 
+from utils import b64_string_to_bytes, bytes_to_b64_string
+
 
 class TestKeypair(unittest.TestCase):
     def test_keypair_generates_valid_signatures(self):
@@ -21,10 +23,9 @@ class TestKeyring(unittest.TestCase):
         '''generate a signature for the base65 concat of keys'''
         keypairs = [keyring.generate_keypair() for _ in range(3)]
         priv_alice, pub_alice = keypairs[0]
+        pub_alice = bytes_to_b64_string(pub_alice)
 
         pubkeys = (keypair[1] for keypair in keypairs)
-        b64pubkeys = (base64.encode(k) for k in pubkeys)
-
         ring = keyring.keyring(*pubkeys)
         sig = keyring.keyring_sign(ring, priv_alice)
 
