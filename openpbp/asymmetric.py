@@ -74,10 +74,9 @@ def verify(message: bytes, signature: bytes, pubkey: bytes) -> bool:
     verifier.update(message)
     try:
         verifier.verify() # raises exception if fails, supposedly
+        return True
     except InvalidSignature:
         return False
-    else:
-        return True
 
 
 def gen_keypair() -> Tuple[bytes, bytes]:
