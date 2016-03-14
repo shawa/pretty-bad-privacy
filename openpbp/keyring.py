@@ -32,9 +32,10 @@ class Keyring(object):
 
 
     def _verify_sig(self, public_key: str, signature: str):
+
         verification = curve.verifySignature(b64_string_to_bytes(public_key),
-                                            self._keystring(),
-                                            b64_string_to_bytes(signature))
+                                             self._keystring(),
+                                             b64_string_to_bytes(signature))
         return verification is 0
 
 
@@ -44,6 +45,3 @@ class Keyring(object):
                          for public_key, signature in key_signatures)
 
         return all(verifications)
-
-    def add_signature(self, signature):
-        assert(_verify_sig(s
