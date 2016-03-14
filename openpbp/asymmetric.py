@@ -7,6 +7,7 @@ from cryptography.hazmat.primitives.serialization import (
         load_pem_public_key,
         load_pem_private_key
     )
+from cryptography.exceptions import InvalidSignature
 
 Keypair = namedtuple('Keypair', ['privkey', 'pubkey'])
 
@@ -71,8 +72,12 @@ def verify(message: bytes, signature: bytes, pubkey: bytes) -> bool:
         hashes.SHA256()
     )
     verifier.update(message)
-    verifier.verify() # raises exception if fails, supposedly
-    return True
+    try:
+        verifier.verify() # raises exception if fails, supposedly
+    except InvalidSignature:
+        return False
+    else:
+        return True
 
 
 def gen_keypair() -> Tuple[bytes, bytes]:
