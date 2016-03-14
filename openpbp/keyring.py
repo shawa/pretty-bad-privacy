@@ -39,7 +39,7 @@ class Keyring(object):
         return verification is 0
 
 
-    def complete(self, ring: dict) -> bool:
+    def complete(self) -> bool:
         key_signatures = zip(self.keys, self.signatures)
         verifications = (self._verify_sig(public_key, signature)
                          for public_key, signature in key_signatures)
