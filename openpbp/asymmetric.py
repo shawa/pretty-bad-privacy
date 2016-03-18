@@ -79,7 +79,7 @@ def verify(message: bytes, signature: bytes, pubkey: bytes) -> bool:
         return False
 
 
-def gen_keypair() -> Tuple[bytes, bytes]:
+def gen_keypair() -> Keypair:
     gen_params = {
             'public_exponent': 65537,
             'key_size': 4096,
