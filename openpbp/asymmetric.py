@@ -1,3 +1,7 @@
+'''
+Wrapper for PyCA's asymmetric crypto primitives, provides asymmetric 
+Keypair generation, signing/verification, encryption/decryption
+'''
 from typing import Tuple
 from collections import namedtuple
 from cryptography.hazmat.backends import default_backend
