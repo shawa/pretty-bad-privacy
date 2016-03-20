@@ -47,9 +47,10 @@ class TestEncryption(unittest.TestCase):
         plaintext = os.urandom(1024)
         sig_serial, serial = encryption.encrypt_message(ring, alice.privkey, plaintext)
 
-        gotten_plaintext = encryption.decrypt_message(alice.privkey,
-                                                      alice.pubkey,
-                                                      sig_serial,
-                                                      serial)
+        for kp in keypairs:
+            gotten_plaintext = encryption.decrypt_message(kp.privkey,
+                                                          alice.pubkey,
+                                                          sig_serial,
+                                                          serial)
 
-        self.assertEqual(plaintext, gotten_plaintext)
+            self.assertEqual(plaintext, gotten_plaintext)

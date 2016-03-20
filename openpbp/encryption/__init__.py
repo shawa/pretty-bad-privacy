@@ -64,32 +64,28 @@ def encrypt_message(ring: Keyring, privkey: bytes,
     # first generates a session key Ks with which to encrypt P.
     session_key = Fernet.generate_key()
     fern = Fernet(session_key)
-
     # She then symmetrically encrypts P with Ks to produce Cs, the
     # symmetrically encrypted cipher text. Note that the session key will be
     # common to all group members.
     message = fern.encrypt(message)
-
     # For each public key Ki in keyring, she asymmetrically encrypts Ks
     # to produce Ksi . Thus with any member’s private key, the session key may
     # be decrypted.
     # She then groups these keys together, to form the Key Block KB,
     # which is a list containing each Ksi .
     keys = ring.encrypt(session_key)
-
-    # TODO:  She places KB and Cs together, to form the Group Ciphertext Cg.
+    # She places KB and Cs together, to form the Group Ciphertext Cg.
     # Cg, and thus the original file P may now be only be decrypted by a member
     # of the group.
     fmt, group_block = pack_group_block(message, keys)
     serialized_group_block = serialize_group_block(fmt, group_block)
     serialized_group_block_bin = serialized_group_block.encode('utf-8')
-
-    # TODO:  Finally, she signs Gg with her private key, producing Sg so that
+    # Finally, she signs Gg with her private key, producing Sg so that
     # each member may verify the file’s integrity, and that the sender is
     # indeed Alice.
     sig = asymmetric.sign(serialized_group_block_bin, privkey) # type: bytes
     sig_serial = bytes_to_b64_string(sig)
-    # TODO:  She bundles Cg with her signature Sg to produce CG. CG may now be
+    # She bundles Cg with her signature Sg to produce CG. CG may now be
     # shared via an insecure channel.
     return sig_serial, serialized_group_block
 
@@ -111,8 +107,12 @@ def decrypt_message(privkey: bytes,
         try:
             session_key = asymmetric.decrypt(key, privkey)
             break
-        except: # TODO: Worst practice
-            print('handle this case better')
+        except ValueError:
+            # There'll be n-1 failed decryptions. We can avoid this by giving
+            # each key a key id within the ring, but this is good enough
+            # for the moment
+            continue
+
     if session_key is None:
         raise RuntimeError('Failed to find a session key. Sorry.')
 
