@@ -14,7 +14,7 @@ class TestAsymmetric(unittest.TestCase):
         plaintext = os.urandom(256)
         ciphertext = asymmetric.encrypt(plaintext, kp.pubkey)
         decrypted = asymmetric.decrypt(ciphertext, kp.privkey)
-        self.assertEquals(plaintext, decrypted)
+        self.assertEqual(plaintext, decrypted)
 
 
     def test_sign(self):

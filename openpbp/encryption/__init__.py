@@ -24,7 +24,7 @@ def unpack_group_block(fmt: str, block: bytes) -> Tuple[Any, List[Any]]:
 def serialize_group_block(fmt: str, block: bytes) -> str:
     block_serial = bytes_to_b64_string(block)
     return ('{fmt}{marker}{block}'
-            .format(fmt=fmt, marker=MAGIC_MARKER, block=block))
+            .format(fmt=fmt, marker=MAGIC_MARKER, block=block_serial))
 
 def deserialize_group_block(serialized: str) -> Tuple[str, bytes]:
     if MAGIC_MARKER not in serialized:
@@ -35,8 +35,8 @@ def deserialize_group_block(serialized: str) -> Tuple[str, bytes]:
     return fmt, block
 
 
-def encrypt(ring: Keyring, privkey: bytes,
-            message: bytes) -> Tuple[bytes, List[bytes]]:
+def encrypt_message(ring: Keyring, privkey: bytes,
+            message: bytes) -> Tuple[bytes, bytes]:
     # To encrypt a plaintext file P to be shared to group members, Alice
     # first generates a session key Ks with which to encrypt P.
     session_key = Fernet.generate_key()
@@ -58,12 +58,14 @@ def encrypt(ring: Keyring, privkey: bytes,
     # Cg, and thus the original file P may now be only be decrypted by a member
     # of the group.
     fmt, group_block = pack_group_block(message, keys)
+    serialized = serialize_group_block(fmt, group_block)
+    serialized_bin = serialized.encode('utf-8')
 
     # TODO:  Finally, she signs Gg with her private key, producing Sg so that
     # each member may verify the file’s integrity, and that the sender is
     # indeed Alice.
-    sig = asymmetric.sign(group_block, privkey)
+    sig = asymmetric.sign(serialized_bin, privkey) # type: bytes
+
     # TODO:  She bundles Cg with her signature Sg to produce CG. CG may now be
     # shared via an insecure channel.
-    keys = ring.encrypt(session_key)
     return (sig, group_block)
