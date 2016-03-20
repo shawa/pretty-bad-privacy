@@ -30,6 +30,11 @@ class Keyring(object):
         else:
             return sig
 
+    def complete(self) -> bool:
+        '''a complete keyring is a list of public keys, and a list of
+        signatures of that list of public keys, one per public key'''
+        assert len(self.sigs) is len(self.keys)
+        return all(self._verify_sig(sig) for sig in self.sigs)
 
     def _verify_sig(self, signature: str) -> bool:
         ''' verify that a signature is valid under one of the keys in the public key list '''
@@ -42,9 +47,3 @@ class Keyring(object):
         '''encrypt a given message for each recipient in the key list'''
         assert self.complete()
         return [asymmetric.encrypt(message, key) for key in self.keys]
-
-    def complete(self) -> bool:
-        '''a complete keyring is a list of public keys, and a list of
-        signatures of that list of public keys, one per public key'''
-        assert len(self.sigs) is len(self.keys)
-        return all(self._verify_sig(sig) for sig in self.sigs)

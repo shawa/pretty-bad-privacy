@@ -51,6 +51,7 @@ def decrypt(message: bytes, privkey: bytes) -> bytes:
             label=None
         )
     )
+    return plaintext
 
 def sign(message: bytes, privkey: bytes) -> bytes:
     private_key = _load_privkey(privkey)
