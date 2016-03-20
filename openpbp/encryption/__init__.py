@@ -40,6 +40,26 @@ def encrypt_message(ring: Keyring, privkey: bytes,
     if not ring.complete():
         raise ValueError('Invalid keyring given')
 
+    # L I T E R A T E   P R O G R A M M I N G
+    # I
+    # T
+    # E
+    # R
+    # A
+    # T
+    # E
+    #
+    # p
+    # R
+    # O
+    # G
+    # R
+    # A
+    # M
+    # M
+    # I
+    # N
+    # G
     # To encrypt a plaintext file P to be shared to group members, Alice
     # first generates a session key Ks with which to encrypt P.
     session_key = Fernet.generate_key()
@@ -61,14 +81,28 @@ def encrypt_message(ring: Keyring, privkey: bytes,
     # Cg, and thus the original file P may now be only be decrypted by a member
     # of the group.
     fmt, group_block = pack_group_block(message, keys)
-    serialized = serialize_group_block(fmt, group_block)
-    serialized_bin = serialized.encode('utf-8')
+    serialized_group_block = serialize_group_block(fmt, group_block)
+    serialized_group_block_bin = serialized_group_block.encode('utf-8')
 
     # TODO:  Finally, she signs Gg with her private key, producing Sg so that
     # each member may verify the file’s integrity, and that the sender is
     # indeed Alice.
-    sig = asymmetric.sign(serialized_bin, privkey) # type: bytes
+    sig = asymmetric.sign(serialized_group_block_bin, privkey) # type: bytes
     sig_serial = bytes_to_b64_string(sig)
     # TODO:  She bundles Cg with her signature Sg to produce CG. CG may now be
     # shared via an insecure channel.
-    return sig_serial, serialized
+    return sig_serial, serialized_group_block
+
+
+def decrypt_message(privkey: bytes,
+                    origin_pubkey: bytes,
+                    sig_serial: str,
+                    serialized_group_block: str) -> bytes:
+    sig = b64_string_to_bytes(sig_serial)
+    serialized_group_block_bin = serialized_group_block.encode('utf-8')
+    if not asymmetric.verify(serialized_group_block_bin, sig, origin_pubkey):
+        raise ValueError('Bad signature on message')
+
+
+
+
