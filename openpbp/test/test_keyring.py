@@ -26,9 +26,14 @@ class TestKeyring(unittest.TestCase):
         ring = keyring.Keyring([kp.pubkey for kp in keypairs])
         ring.sigs = [ring.signature(kp.privkey, fmt=str) for kp in keypairs]
 
-        message = os.urandom(64)
-        messages = ring.encrypt(message)
+        plaintext = os.urandom(64)
+        messages = ring.encrypt(plaintext)
 
+        plains = (asymmetric.decrypt(msg, kp.privkey)
+                  for kp, msg in zip(keypairs, messages))
+
+        for plain in plains:
+            self.assertEqual(plaintext, plain)
 
 
 if __name__ == '__main__':
