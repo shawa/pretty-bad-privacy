@@ -103,6 +103,20 @@ def decrypt_message(privkey: bytes,
     if not asymmetric.verify(serialized_group_block_bin, sig, origin_pubkey):
         raise ValueError('Bad signature on message')
 
+    fmt, group_block = deserialize_group_block(serialized_group_block)
+    message, keys = unpack_group_block(fmt, group_block)
+
+    session_key = None
+    for key in keys:
+        try:
+            session_key = asymmetric.decrypt(key, privkey)
+            break
+        except: # TODO: Worst practice
+            print('handle this case better')
+    if session_key is None:
+        raise RuntimeError('Failed to find a session key. Sorry.')
 
 
-
+    fern = Fernet(session_key)
+    plaintext = fern.decrypt(message)
+    return plaintext
