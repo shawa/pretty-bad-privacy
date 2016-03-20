@@ -36,7 +36,10 @@ def deserialize_group_block(serialized: str) -> Tuple[str, bytes]:
 
 
 def encrypt_message(ring: Keyring, privkey: bytes,
-            message: bytes) -> Tuple[bytes, bytes]:
+            message: bytes) -> Tuple[str, str]:
+    if not ring.complete():
+        raise ValueError('Invalid keyring given')
+
     # To encrypt a plaintext file P to be shared to group members, Alice
     # first generates a session key Ks with which to encrypt P.
     session_key = Fernet.generate_key()
@@ -65,7 +68,7 @@ def encrypt_message(ring: Keyring, privkey: bytes,
     # each member may verify the file’s integrity, and that the sender is
     # indeed Alice.
     sig = asymmetric.sign(serialized_bin, privkey) # type: bytes
-
+    sig_serial = bytes_to_b64_string(sig)
     # TODO:  She bundles Cg with her signature Sg to produce CG. CG may now be
     # shared via an insecure channel.
-    return (sig, group_block)
+    return sig_serial, serialized

@@ -8,6 +8,8 @@ from utils import b64_string_to_bytes, bytes_to_b64_string
 class Keyring(object):
     def __init__(self, keys: List[bytes]) -> None:
         '''generate a keyring dict with the given keys'''
+        if not all(type(key) is bytes for key in keys):
+            raise ValueError('keys must be a list of bytes objects')
 
         self.keys = keys
         self.sigs = []  # type: List[str]

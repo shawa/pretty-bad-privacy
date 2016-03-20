@@ -2,6 +2,8 @@ import unittest
 import os
 
 import encryption
+import asymmetric
+import keyring
 
 class TestEncryption(unittest.TestCase):
     def test_packing(self):
@@ -22,3 +24,13 @@ class TestEncryption(unittest.TestCase):
         fmt_deser, block_deser = encryption.deserialize_group_block(serialized)
         self.assertEqual(fmt, fmt_deser)
         self.assertEqual(block, block_deser)
+
+    def test_ring_encrypt(self):
+        keypairs = [asymmetric.gen_keypair() for _ in range(4)]
+        alice = keypairs[0]
+
+        ring = keyring.Keyring([kp.pubkey for kp in keypairs])
+        ring.sigs = [ring.signature(kp.privkey, fmt=str) for kp in keypairs]
+        message = os.urandom(1024)
+        sig, serial = encryption.encrypt_message(ring, alice.privkey, message)
+        print(sig, serial)
