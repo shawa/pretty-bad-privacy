@@ -1,2 +1,4 @@
-[ ] Keyring generation and signature
-[ ] Message encryption
+[x] Keyring generation and signature
+[x] Message encryption
+[ ] CLI
+[ ] GUI?
