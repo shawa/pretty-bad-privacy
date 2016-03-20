@@ -1,21 +1,8 @@
 import unittest
 import keyring
-import axolotl_curve25519 as curve
 import os
 
 from utils import b64_string_to_bytes, bytes_to_b64_string
-
-
-class TestKeypair(unittest.TestCase):
-    def test_keypair_generates_valid_signatures(self):
-        '''keypair should generate valid signatures'''
-
-        priv, pub = keyring.generate_keypair()
-        nonce = os.urandom(64)
-        message = os.urandom(64)
-        sig = curve.calculateSignature(nonce, priv, message)
-        verification = curve.verifySignature(pub, message, sig)
-        self.assertIs(0, verification)
 
 
 class TestKeyring(unittest.TestCase):
