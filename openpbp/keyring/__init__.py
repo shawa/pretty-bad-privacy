@@ -45,7 +45,9 @@ class Keyring(object):
     def complete(self) -> bool:
         '''a complete keyring is a list of public keys, and a list of
         signatures of that list of public keys, one per public key'''
-        assert len(self.sigs) is len(self.keys)
+        if not len(self.sigs) is len(self.keys):
+            return False
+
         return all(self._verify_sig(sig) for sig in self.sigs)
 
     def _verify_sig(self, signature: str) -> bool:
