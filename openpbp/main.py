@@ -1,20 +1,55 @@
-import argparse
-
 '''
-pbp keypair
-pbp keyring create <keys>
-pbp verify <keyring file>
-pbp encrypt <keyring file> <plaintext>
-pbp decrypt <private key> <ciphertext>
+Usage:
+    pbp keypair <outfile>
+    pbp keyring <keys>...
+    pbp verify <keyring_file>
+    pbp encrypt <keyring_file> <plaintext>
+    pbp decrypt <private_key> <ciphertext>
 '''
-def main():
-    actions = [
-            'gen_keypair',
-            'create_keyring',
-            'verify_keyring',
-            'encrypt',
-            'decrypt',
-    ]
-    p = argparse.ArgumentParser()
-    p.add_argument('action', type=str, choices=actions)
 
+from docopt import docopt
+import sys
+
+def handle_decrypt(arguments):
+    pass
+
+
+def handle_encrypt(arguments):
+    pass
+
+
+def handle_keypair(arguments):
+    import asymmetric
+    private_outfile = arguments['<outfile>']
+    public_outfile = private_outfile + '.pub'
+
+    privkey, pubkey = asymmetric.gen_keypair()
+    with open(private_outfile, 'w') as f:
+        f.write(privkey.decode('utf-8'))
+
+    with open(public_outfile, 'w') as f:
+        f.write(pubkey.decode('utf-8'))
+
+
+def handle_keyring(arguments):
+    print(arguments)
+    pass
+
+
+def handle_verify(arguments):
+    pass
+
+
+HANDLER = {
+       'decrypt': handle_decrypt,
+       'encrypt': handle_encrypt,
+       'keypair': handle_keypair,
+       'keyring': handle_keyring,
+       'verify': handle_verify,
+}
+
+if __name__ == '__main__':
+    arguments = docopt(__doc__, version='Naval Fate 2.0')
+    for action in ('decrypt', 'encrypt', 'keypair', 'keyring', 'verify'):
+        if arguments[action]:
+            HANDLER[action](arguments)
