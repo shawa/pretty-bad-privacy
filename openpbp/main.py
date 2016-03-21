@@ -4,7 +4,6 @@ Usage:
     pbp keyring create <keys>...
     pbp keyring sign <keyring_file> <privkey_file>
     pbp keyring complete <keyring_file> <signature_names>...
-    pbp verify <keyring_file>
     pbp encrypt <keyring_file> <plaintext>
     pbp decrypt <private_key> <ciphertext>
 
@@ -82,21 +81,15 @@ def handle_keyring(arguments):
         sign()
 
 
-
-def handle_verify(arguments):
-    pass
-
-
 HANDLER = {
        'decrypt': handle_decrypt,
        'encrypt': handle_encrypt,
        'keypair': handle_keypair,
        'keyring': handle_keyring,
-       'verify': handle_verify,
 }
 
 if __name__ == '__main__':
     arguments = docopt(__doc__, version='Naval Fate 2.0')
-    for action in ('decrypt', 'encrypt', 'keypair', 'keyring', 'verify'):
+    for action in ('decrypt', 'encrypt', 'keypair', 'keyring'):
         if arguments[action]:
             HANDLER[action](arguments)
