@@ -15,7 +15,9 @@ class Keyring(object):
         self.sigs = sigs if sigs is not None else [] # type: List[str]
 
     def to_json(self) -> str:
-        return json.dumps({'keys': self.keys, 'sigs': self.sigs})
+        def _stringify(l):
+            return [member.decode('utf-8') for member in l]
+        return json.dumps({'keys': _stringify(self.keys), 'sigs': self.sigs})
 
     @classmethod
     def from_json(cls, json_data: str):

@@ -1,10 +1,13 @@
 '''
 Usage:
     pbp keypair <outfile>
-    pbp keyring (create <keys>... | sign <keyring_file> <privkey_file>)
+    pbp keyring create <keys>...
+    pbp keyring sign <keyring_file> <privkey_file>
+    pbp keyring complete <keyring_file> <signature_names>...
     pbp verify <keyring_file>
     pbp encrypt <keyring_file> <plaintext>
     pbp decrypt <private_key> <ciphertext>
+
 '''
 
 from docopt import docopt
@@ -55,8 +58,26 @@ def handle_keyring(arguments):
         with open(privkey_file + '.sig', 'w') as f:
             f.write(sig)
 
+    def complete():
+        keyring_file = arguments['<keyring_file>']
+        sig_names = arguments['<signature_names>']
+        keyring_data = {
+            'keys': [key.encode('utf-8') for key in
+                     json.load(open(keyring_file, 'r'))['keys']],
+            'sigs': [open(sig_name + '.sig', 'r').read()
+                     for sig_name in sig_names],
+        }
+
+        ring = keyring.Keyring(**keyring_data)
+        if not ring.complete():
+            raise ValueError('Invalid signature/key data')
+
+        print(ring.to_json())
+
     if arguments['create']:
         create()
+    if arguments['complete']:
+        complete()
     elif arguments['sign']:
         sign()
 
