@@ -32,9 +32,21 @@ def handle_keypair(arguments):
 
 
 def handle_keyring(arguments):
-    print(arguments)
-    pass
+    import json
+    key_names = arguments['<keys>']
+    pubkey_names = [key_name + '.pub' for key_name in key_names]
+    signature_names = [key_name + '.sig' for key_name in key_names]
 
+    keys = [open(pubkey_name, 'r').read()
+            for pubkey_name in pubkey_names]
+
+    partial_ring = {'keys' : keys, 'sigs': []}
+    outfile_name = arguments['--outfile']
+    if outfile_name:
+        with open(arguments['outfile'], 'w') as f:
+            json.dump(partial_ring, sys.stdout)
+    else:
+        print(json.dumps(partial_ring))
 
 def handle_verify(arguments):
     pass
