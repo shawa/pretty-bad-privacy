@@ -3,4 +3,5 @@ env
 **/__pycache__
 
 openpbp/keys
+openpbp/files
 **/*.json
