@@ -5,7 +5,7 @@ Usage:
     pbp keyring sign <keyring_file> <privkey_file>
     pbp keyring complete <keyring_file> <signature_names>...
     pbp encrypt <private_key> <keyring_file> <plaintext>
-    pbp decrypt <private_key> <ciphertext>
+    pbp decrypt <private_key> <origin_pubkey> <ciphertext>
 
 '''
 
@@ -15,15 +15,22 @@ import json
 import keyring
 import encryption
 
-def handle_decrypt(arguments):
-    pass
+MAGIC_MARKER = '|#|ClubMate|@|'
 
+def handle_decrypt(arguments):
+    privkey, pubkey = (open(arguments[key], 'r').read().encode('utf-8')
+                       for key in ('<private_key>', '<origin_pubkey>'))
+    ciphertext_block = open(arguments['<ciphertext>'], 'r').read()
+    sig, serialized_group_block = ciphertext_block.split(MAGIC_MARKER)
+    print(sig, serialized_group_block, sep='\n', file=sys.stderr)
+    plaintext = encryption.decrypt_message(privkey, pubkey, sig, serialized_group_block)
+    print(plaintext.encode('utf-8'))
 
 def handle_encrypt(arguments):
     privkey_file = arguments['<private_key>']
     keyring_file = arguments['<keyring_file>']
     infile = arguments['<plaintext>']
-    
+
     keyring_data = json.load(open(keyring_file, 'r'))
     keyring_data['keys'] = [k.encode('utf-8') for k in keyring_data['keys']]
     ring = keyring.Keyring(**keyring_data)
@@ -34,7 +41,7 @@ def handle_encrypt(arguments):
     privkey = open(privkey_file, 'r').read().encode('utf-8')
     plaintext = open(infile, 'r').read().encode('utf-8')
     sig, ciphertext = encryption.encrypt_message(ring, privkey, plaintext)
-    output = '{}{}{}'.format(sig, encryption.MAGIC_MARKER, ciphertext)
+    output = '{}{}{}'.format(sig, MAGIC_MARKER, ciphertext)
     print(output)
 
 def handle_keypair(arguments):
