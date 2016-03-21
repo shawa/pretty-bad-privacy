@@ -1,19 +1,27 @@
 from typing import Tuple, List, Union
 import asymmetric
 import os
-
+import json
 
 from utils import b64_string_to_bytes, bytes_to_b64_string
 
 class Keyring(object):
-    def __init__(self, keys: List[bytes]) -> None:
+    def __init__(self, keys: List[bytes], sigs: List[str]=None) -> None:
         '''generate a keyring dict with the given keys'''
         if not all(type(key) is bytes for key in keys):
             raise ValueError('keys must be a list of bytes objects')
 
         self.keys = keys
-        self.sigs = []  # type: List[str]
+        self.sigs = sigs if sigs is not None else [] # type: List[str]
 
+    def to_json(self) -> str:
+        return json.dumps({'keys': self.keys, 'sigs': self.sigs})
+
+    @classmethod
+    def from_json(cls, json_data: str):
+        ring_dict = json.loads(json_data)
+        ring_dict['keys'] = [key.encode('utf-8') for key in ring_dict['keys']]
+        return Keyring(**ring_dict)
 
     def _keystring(self) -> bytes:
         '''return a bytes of the concatenated keyring PEM data values'''
