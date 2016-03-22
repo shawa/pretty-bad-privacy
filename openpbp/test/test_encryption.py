@@ -54,3 +54,25 @@ class TestEncryption(unittest.TestCase):
                                                           serial)
 
             self.assertEqual(plaintext, gotten_plaintext)
+
+    def test_final_serialization(self):
+        keypairs = [asymmetric.gen_keypair() for _ in range(4)]
+        alice = keypairs[0]
+        ring = keyring.Keyring([kp.pubkey for kp in keypairs])
+        ring.sigs = [ring.signature(kp.privkey, fmt=str) for kp in keypairs]
+        plaintext = os.urandom(1024)
+        sig_serial, serial = encryption.encrypt_message(ring, alice.privkey, plaintext)
+
+        filetext = encryption.serialize_message(sig_serial, serial)
+        g_sig_serial, g_serial = encryption.deserialize_message(filetext)
+
+        self.assertEqual(sig_serial, g_sig_serial)
+        self.assertEqual(serial, g_serial)
+
+        for kp in keypairs:
+            gotten_plaintext = encryption.decrypt_message(kp.privkey,
+                                                          alice.pubkey,
+                                                          g_sig_serial,
+                                                          g_serial)
+
+            self.assertEqual(plaintext, gotten_plaintext)
