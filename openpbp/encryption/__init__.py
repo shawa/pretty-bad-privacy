@@ -8,6 +8,7 @@ from utils import b64_string_to_bytes, bytes_to_b64_string
 import asymmetric
 
 MAGIC_MARKER = '|#|buckfast|@|'
+MAGIC_CRAYON = '|#|clubmate|@|'
 
 def pack_group_block(message: bytes, keys: List[bytes]) -> Tuple[str, bytes]:
     fmt = ('{}s'.format(len(message)) +
@@ -26,6 +27,7 @@ def serialize_group_block(fmt: str, block: bytes) -> str:
     return ('{fmt}{marker}{block}'
             .format(fmt=fmt, marker=MAGIC_MARKER, block=block_serial))
 
+
 def deserialize_group_block(serialized: str) -> Tuple[str, bytes]:
     if MAGIC_MARKER not in serialized:
         raise ValueError('bad serialized block given')
@@ -33,6 +35,18 @@ def deserialize_group_block(serialized: str) -> Tuple[str, bytes]:
     fmt, block_serial = serialized.split(MAGIC_MARKER)
     block = b64_string_to_bytes(block_serial)
     return fmt, block
+
+
+def serialize_message(sig_serial: str, serialized_group_block: str) -> str:
+    return '{}{}{}'.format(sig_serial, MAGIC_CRAYON, serialized_group_block)
+
+
+def deserialize_message(serialized_message: str)  -> Tuple[str, str]:
+    if MAGIC_CRAYON not in serialized_message:
+        raise ValueError('bad serialized message given')
+
+    sig, serialized_group_block = serialized_message.split(MAGIC_CRAYON)
+    return sig, serialized_group_block
 
 
 def encrypt_message(ring: Keyring, privkey: bytes,
