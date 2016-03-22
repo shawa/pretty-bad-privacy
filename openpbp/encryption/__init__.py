@@ -54,26 +54,6 @@ def encrypt_message(ring: Keyring, privkey: bytes,
     if not ring.complete():
         raise ValueError('Invalid keyring given')
 
-    # L I T E R A T E   P R O G R A M M I N G
-    # I
-    # T
-    # E
-    # R
-    # A
-    # T
-    # E
-    #
-    # p
-    # R
-    # O
-    # G
-    # R
-    # A
-    # M
-    # M
-    # I
-    # N
-    # G
     # To encrypt a plaintext file P to be shared to group members, Alice
     # first generates a session key Ks with which to encrypt P.
     session_key = Fernet.generate_key()
