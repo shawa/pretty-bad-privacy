@@ -7,85 +7,37 @@ import asymmetric
 import keyring
 from utils import b64_string_to_bytes
 
-class TestEncryption(unittest.TestCase):
-    def test_packing(self):
-        msg = os.urandom(64)
-        keys = [os.urandom(64) for _ in range(5)]
-        fmt, block = encryption.pack_group_block(msg, keys)
+from hypothesis import given
+from hypothesis.strategies import binary, lists
 
-        msg_unpacked, keys_unpacked = encryption.unpack_group_block(fmt, block)
-        self.assertEqual(msg, msg_unpacked)
-        self.assertEqual(keys, keys_unpacked)
+class Test_pack_unpack_group_block(unittest.TestCase):
+    @given(binary(min_size=1), binary(min_size=1), binary(min_size=1), binary(min_size=1))
+    def test_gotten_is_given(self, message, k1, k2, k3):
+        keys = [k1, k2, k3]
+        fmt, block = encryption.pack_group_block(message, keys)
+        g_msg, g_keys = encryption.unpack_group_block(fmt, block)
+        self.assertEqual(message, g_msg)
+        self.assertEqual(keys, g_keys)
 
-    def test_serialization(self):
-        msg = os.urandom(64)
-        keys = [os.urandom(64) for _ in range(5)]
-        fmt, block = encryption.pack_group_block(msg, keys)
+class Test_serialize_group_block(unittest.TestCase):
+    pass
 
-        serialized = encryption.serialize_group_block(fmt, block)
-        fmt_deser, block_deser = encryption.deserialize_group_block(serialized)
-        self.assertEqual(fmt, fmt_deser)
-        self.assertEqual(block, block_deser)
 
-    def test_ring_encrypt(self):
-        for _ in range(10):
-            keypairs = [asymmetric.gen_keypair() for _ in range(4)]
-            alice = keypairs[0]
+class Test_deserialize_group_block(unittest.TestCase):
+    pass
 
-            ring = keyring.Keyring([kp.pubkey for kp in keypairs])
-            ring.sigs = [ring.signature(kp.privkey, fmt=str) for kp in keypairs]
-            message = os.urandom(1024)
-            sig_serial, serial = encryption.encrypt_message(ring, alice.privkey,
-                                                            message)
-            sig = b64_string_to_bytes(sig_serial)
-            serial_bin = serial.encode('utf-8')
-            self.assertTrue(asymmetric.verify(serial_bin, sig, alice.pubkey))
 
-    def test_ring_decrypt(self):
-        keypairs = [asymmetric.gen_keypair() for _ in range(4)]
-        alice = keypairs[0]
-        ring = keyring.Keyring([kp.pubkey for kp in keypairs])
-        ring.sigs = [ring.signature(kp.privkey, fmt=str) for kp in keypairs]
-        plaintext = os.urandom(32)
-        sig_serial, serial = encryption.encrypt_message(ring, alice.privkey,
-                                                        plaintext)
+class Test_serialize_message(unittest.TestCase):
+    pass
 
-        for kp in keypairs:
-            gotten_plaintext = encryption.decrypt_message(kp.privkey,
-                                                          alice.pubkey,
-                                                          sig_serial,
-                                                          serial)
 
-            self.assertEqual(plaintext, gotten_plaintext)
+class Test_deserialize_message(unittest.TestCase):
+    pass
 
-    def test_final_serialization(self):
-        keypairs = [asymmetric.gen_keypair() for _ in range(4)]
-        alice = keypairs[0]
-        ring = keyring.Keyring([kp.pubkey for kp in keypairs])
-        ring.sigs = [ring.signature(kp.privkey, fmt=str) for kp in keypairs]
-        plaintext = 'der prickelnde mate-eistee'.encode('utf-8')
-        plaintext = os.urandom(128)
 
-        sig_serial, serial = encryption.encrypt_message(ring, alice.privkey,
-                                                        plaintext)
+class Test_encrypt_message(unittest.TestCase):
+    pass
 
-        filetext = encryption.serialize_message(sig_serial, serial)
 
-        with open('tempfile', 'w') as f:
-            f.write(filetext)
-
-        with open('tempfile', 'r') as f:
-            filetext = f.read()
-
-        g_sig_serial, g_serial = encryption.deserialize_message(filetext)
-
-        self.assertEqual(sig_serial, g_sig_serial)
-        self.assertEqual(serial, g_serial)
-
-        for kp in keypairs:
-            gotten_plaintext = encryption.decrypt_message(kp.privkey,
-                                                          alice.pubkey,
-                                                          g_sig_serial,
-                                                          g_serial)
-
-            self.assertEqual(plaintext, gotten_plaintext)
+class Test_decrypt_message(unittest.TestCase):
+    pass
