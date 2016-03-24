@@ -1,6 +1,10 @@
 import unittest
 import asymmetric
 import os
+import sys
+
+from hypothesis import given, settings
+from hypothesis.strategies import binary
 
 class TestAsymmetric(unittest.TestCase):
     def test__load_pubkey(self):
@@ -8,16 +12,20 @@ class TestAsymmetric(unittest.TestCase):
 
     def test__load_privkey(self):
         pass
+    def setUp(self):
+        self.kp = asymmetric.gen_keypair()
 
-    def test_encrypt_decrypt(self):
-        kp = asymmetric.gen_keypair()
-        plaintext = os.urandom(256)
-        ciphertext = asymmetric.encrypt(plaintext, kp.pubkey)
-        decrypted = asymmetric.decrypt(ciphertext, kp.privkey)
+    @given(binary(min_size=400))
+    @settings(max_examples=500)
+    def test_encrypt_decrypt(self, plaintext):
+        ciphertext = asymmetric.encrypt(plaintext, self.kp.pubkey)
+        self.assertIsNotNone(ciphertext)
+        decrypted = asymmetric.decrypt(ciphertext, self.kp.privkey)
         self.assertEqual(plaintext, decrypted)
 
 
     def test_sign(self):
+
         pass
 
     def test_verify(self):

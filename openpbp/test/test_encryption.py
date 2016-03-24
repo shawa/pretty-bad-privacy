@@ -1,5 +1,6 @@
 import unittest
 import os
+import sys
 
 import encryption
 import asymmetric
@@ -27,25 +28,27 @@ class TestEncryption(unittest.TestCase):
         self.assertEqual(block, block_deser)
 
     def test_ring_encrypt(self):
-        keypairs = [asymmetric.gen_keypair() for _ in range(4)]
-        alice = keypairs[0]
+        for _ in range(10):
+            keypairs = [asymmetric.gen_keypair() for _ in range(4)]
+            alice = keypairs[0]
 
-        ring = keyring.Keyring([kp.pubkey for kp in keypairs])
-        ring.sigs = [ring.signature(kp.privkey, fmt=str) for kp in keypairs]
-        message = os.urandom(1024)
-        sig_serial, serial = encryption.encrypt_message(ring, alice.privkey,
-                                                        message)
-        sig = b64_string_to_bytes(sig_serial)
-        serial_bin = serial.encode('utf-8')
-        self.assertTrue(asymmetric.verify(serial_bin, sig, alice.pubkey))
+            ring = keyring.Keyring([kp.pubkey for kp in keypairs])
+            ring.sigs = [ring.signature(kp.privkey, fmt=str) for kp in keypairs]
+            message = os.urandom(1024)
+            sig_serial, serial = encryption.encrypt_message(ring, alice.privkey,
+                                                            message)
+            sig = b64_string_to_bytes(sig_serial)
+            serial_bin = serial.encode('utf-8')
+            self.assertTrue(asymmetric.verify(serial_bin, sig, alice.pubkey))
 
     def test_ring_decrypt(self):
         keypairs = [asymmetric.gen_keypair() for _ in range(4)]
         alice = keypairs[0]
         ring = keyring.Keyring([kp.pubkey for kp in keypairs])
         ring.sigs = [ring.signature(kp.privkey, fmt=str) for kp in keypairs]
-        plaintext = os.urandom(1024)
-        sig_serial, serial = encryption.encrypt_message(ring, alice.privkey, plaintext)
+        plaintext = os.urandom(32)
+        sig_serial, serial = encryption.encrypt_message(ring, alice.privkey,
+                                                        plaintext)
 
         for kp in keypairs:
             gotten_plaintext = encryption.decrypt_message(kp.privkey,
@@ -60,10 +63,20 @@ class TestEncryption(unittest.TestCase):
         alice = keypairs[0]
         ring = keyring.Keyring([kp.pubkey for kp in keypairs])
         ring.sigs = [ring.signature(kp.privkey, fmt=str) for kp in keypairs]
-        plaintext = os.urandom(1024)
-        sig_serial, serial = encryption.encrypt_message(ring, alice.privkey, plaintext)
+        plaintext = 'der prickelnde mate-eistee'.encode('utf-8')
+        plaintext = os.urandom(128)
+
+        sig_serial, serial = encryption.encrypt_message(ring, alice.privkey,
+                                                        plaintext)
 
         filetext = encryption.serialize_message(sig_serial, serial)
+
+        with open('tempfile', 'w') as f:
+            f.write(filetext)
+
+        with open('tempfile', 'r') as f:
+            filetext = f.read()
+
         g_sig_serial, g_serial = encryption.deserialize_message(filetext)
 
         self.assertEqual(sig_serial, g_sig_serial)
