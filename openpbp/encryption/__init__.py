@@ -13,6 +13,7 @@ def _symmetric_encrypt(plaintext: bytes) -> Tuple[bytes, bytes]:
     symmetric_ciphertext = fernet.encrypt(plaintext)
     return symmetric_ciphertext, session_key
 
+
 def _symmetric_decrypt(ciphertext: bytes, session_key: bytes) -> bytes:
     fernet = Fernet(session_key)
     plaintext = fernet.decrypt(ciphertext)
@@ -26,6 +27,7 @@ def pack_keys_and_ciphertext(keys: List[bytes],
     fmt = fmt_k + fmt_b
     packed = pack(fmt, keys, ciphertext)
     return fmt, packed
+
 
 def unpack_keys_and_ciphertext(fmt, packed):
     vals = unpack(fmt, packed)
@@ -45,6 +47,11 @@ def pack_sig_and_block(block_fmt: str,
     return fmt, packed
 
 
+def unpack_sig_and_block(fmt, packed):
+    block_fmt, sig, ciphertext_block = unpack(fmt, packed)
+    return block_fmt, sig, ciphertext_block
+
+
 def encrypt(plaintext: bytes, ring: Keyring, privkey: bytes) -> str:
     symmetric_ciphertext, symmetric_key = _symmetric_encrypt(plaintext)
     group_keys = ring.encrypt(symmetric_key)
@@ -52,6 +59,7 @@ def encrypt(plaintext: bytes, ring: Keyring, privkey: bytes) -> str:
     fmt, key_ciphertext_block = pack_keys_and_ciphertext(group_keys,
                                                          symmetric_ciphertext)
     sig = asymmetric.sign(key_ciphertext_block, privkey)
+
 
 def decrypt(message: str, pubkey: bytes, privkey: bytes) -> bytes:
     pass
