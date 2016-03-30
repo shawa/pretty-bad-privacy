@@ -6,14 +6,25 @@ import sys
 from hypothesis import given, settings
 from hypothesis.strategies import binary
 
-class TestAsymmetric(unittest.TestCase):
-    def test__load_pubkey(self):
-        pass
+import cryptography.hazmat.backends.openssl
 
-    def test__load_privkey(self):
-        pass
+class TestAsymmetric(unittest.TestCase):
     def setUp(self):
         self.kp = asymmetric.gen_keypair()
+
+    def gen_keypair(self):
+        self.assertNotNone(self.kp.pubkey)
+        self.assertNotNone(self.kp.privkey)
+
+    def test__load_pubkey(self):
+        pubkey_pem = self.kp.pubkey
+        key = asymmetric._load_pubkey(pubkey_pem)
+        self.assertIsNotNone(key)
+
+    def test__load_privkey(self):
+        privkey_pem = self.kp.privkey
+        key = asymmetric._load_privkey(privkey_pem)
+        self.assertIsNotNone(key)
 
     @given(binary(min_size=400))
     @settings(max_examples=500)
@@ -23,16 +34,12 @@ class TestAsymmetric(unittest.TestCase):
         decrypted = asymmetric.decrypt(ciphertext, self.kp.privkey)
         self.assertEqual(plaintext, decrypted)
 
+    @given(binary())
+    def test_sign_verify(self, message):
+        sig = asymmetric.sign(message, self.kp.privkey)
+        valid = asymmetric.verify(message, sig, self.kp.pubkey)
+        self.assertTrue(valid)
 
-    def test_sign(self):
-
-        pass
-
-    def test_verify(self):
-        pass
-
-    def gen_keypair(self):
-        pass
 
 if __name__ == '__main__':
     unittest.main()
