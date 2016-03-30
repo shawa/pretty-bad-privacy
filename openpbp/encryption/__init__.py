@@ -42,13 +42,13 @@ def pack_sig_and_block(block_fmt: str,
     fmt_sig = '{}s'.format(len(sig))
     fmt_cipher_block = '{}s'.format(len(ciphertext_block))
     fmt = fmt_block_fmt + fmt_sig + fmt_cipher_block
-    packed = pack(fmt, block_fmt.encode('utf-8'), sig, ciphertext_block)
+    packed = pack(fmt, block_fmt.encode('utf-8', errors='replace'), sig, ciphertext_block)
     return fmt, packed
 
 
 def unpack_sig_and_block(fmt: str, packed: bytes):
     block_fmt, sig, ciphertext_block = unpack(fmt, packed)
-    return block_fmt.decode('utf-8'), sig, ciphertext_block
+    return block_fmt.decode('utf-8', errors=''), sig, ciphertext_block
 
 
 _SEPARATOR = '|'
@@ -60,15 +60,17 @@ def serialize_everything(fmt: str, everything_packed: bytes) -> str:
 def deserialize_everything(serialized_everything_packed: str):
     fmt, everything_packed = serialized_everything_packed.split(_SEPARATOR)
     deserialized = b64_string_to_bytes(everything_packed)
-    return fmt, everything_packed
+    return fmt, deserialized
 
 
 def encrypt(plaintext: bytes, ring: Keyring, privkey: bytes) -> str:
     symm_ciphertext, symm_key = _symmetric_encrypt(plaintext)
     group_keys = ring.encrypt(symm_key)
     fmt, ciphertext_block = pack_keys_and_ciphertext(group_keys, symm_ciphertext)
-    sig = asymmetric.sign(key_ciphertext_block, privkey)
+    sig = asymmetric.sign(ciphertext_block, privkey)
     fmt, packed = pack_sig_and_block(fmt, sig, ciphertext_block)
+    string_data_to_write = serialize_everything(fmt, packed)
+    return string_data_to_write
 
 
 def decrypt(message: str, pubkey: bytes, privkey: bytes) -> bytes:
