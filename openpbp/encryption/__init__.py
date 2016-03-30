@@ -24,7 +24,7 @@ def pack_keys_and_ciphertext(keys: List[bytes],
     fmt_k = ''.join(['{}s'.format(len(key)) for key in keys])
     fmt_b = '{}s'.format(len(ciphertext))
     fmt = fmt_k + fmt_b
-    packed = pack(fmt, ciphertext)
+    packed = pack(fmt, keys, ciphertext)
     return fmt, packed
 
 def unpack_keys_and_ciphertext(fmt, packed):
@@ -37,7 +37,13 @@ def unpack_keys_and_ciphertext(fmt, packed):
 def pack_sig_and_block(block_fmt: str,
                        sig: bytes,
                        ciphertext_block: bytes) -> Tuple[str, bytes]:
-    pass
+    fmt_block_fmt = '{}s'.format(len(block_fmt))
+    fmt_sig = '{}s'.format(len(sig))
+    fmt_cipher_block = '{}s'.format(len(ciphertext_block))
+    fmt = fmt_block_fmt + fmt_sig + fmt_cipher_block
+    packed = pack(fmt, block_fmt, sig, ciphertext_block)
+    return fmt, packed
+
 
 def encrypt(plaintext: bytes, ring: Keyring, privkey: bytes) -> str:
     symmetric_ciphertext, symmetric_key = _symmetric_encrypt(plaintext)
