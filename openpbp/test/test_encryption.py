@@ -79,8 +79,10 @@ class Test_encrypt(unittest.TestCase):
             self.assertTrue(ring.complete)
             self.ring = ring
 
+
     @given(binary())
     def test_that_it_works(self, plaintext):
             string_to_write = encryption.encrypt(plaintext, self.ring, self.alice.privkey)
-            print(string_to_write)
+            self.assertIsNotNone(strigng_to_write)
 
+    

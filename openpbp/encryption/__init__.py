@@ -73,5 +73,16 @@ def encrypt(plaintext: bytes, ring: Keyring, privkey: bytes) -> str:
     return string_data_to_write
 
 
-def decrypt(message: str, pubkey: bytes, privkey: bytes) -> bytes:
-    pass
+def decrypt(serialized_everything: bytes,
+            pubkey: bytes, privkey: bytes) -> bytes:
+    '''do everything we did to encrypt, but backwards'''
+    fmt, deserialized_block = deserialize_everything(serialized_everything)
+    block_fmt, sig, ciphertext_block = unpack_sig_and_block(fmt, deserialized_block)
+    valid = asymmetric.verify(sig, ciphertext_block, pubkey)
+
+    if not valid:
+        raise ValueError('Signature invalid :(((')
+
+    keys, ciphertext = unpack_keys_and_ciphertext(block_fmt, ciphertext_block)
+
+# HOME STRETCH LOL!
