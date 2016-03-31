@@ -106,7 +106,7 @@ class Test_encrypt(unittest.TestCase):
     def test_encrypt_decrypt_inverts(self, plaintext):
         ciphertext = encryption.encrypt(plaintext, self.ring,
                                         self.alice.privkey)
-        got_plaintext = encryption.decrypt(ciphertext, self.alice.pubkey,
-                                           self.bob.privkey)
-        print(got_plaintext, plaintext)
-        self.assertEqual(plaintext, got_plaintext)
+        for kp in (self.alice, self.bob, self.carol, self.derek):
+            got_plaintext = encryption.decrypt(ciphertext, self.alice.pubkey,
+                                               kp.privkey)
+            self.assertEqual(plaintext, got_plaintext)
