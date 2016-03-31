@@ -110,3 +110,17 @@ class Test_encrypt(unittest.TestCase):
             got_plaintext = encryption.decrypt(ciphertext, self.alice.pubkey,
                                                kp.privkey)
             self.assertEqual(plaintext, got_plaintext)
+
+
+    def test_encrypt_file(self):
+        plainfilename = '../data/dog.png'
+        cipherfilename = '{}.enc'.format(plainfilename)
+        with open(plainfilename, 'rb') as pf, open(cipherfilename, 'w') as cf:
+            plaintext = pf.read()
+            ciphertext = encryption.encrypt(plaintext, self.ring, self.alice.privkey)
+            cf.write(ciphertext)
+
+        with open(cipherfilename, 'r') as cf, open(plainfilename + 'got.png', 'wb') as pf:
+            got_plain = cf.read()
+            plaintext = encryption.decrypt(ciphertext, self.alice.pubkey, self.bob.privkey)
+            pf.write(plaintext)
