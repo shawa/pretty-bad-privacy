@@ -1,5 +1,5 @@
 '''
-Wrapper for PyCA's asymmetric crypto primitives, provides asymmetric 
+Wrapper for PyCA's asymmetric crypto primitives, provides asymmetric
 Keypair generation, signing/verification, encryption/decryption
 '''
 from typing import Tuple

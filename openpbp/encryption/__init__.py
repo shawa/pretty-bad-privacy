@@ -73,16 +73,32 @@ def encrypt(plaintext: bytes, ring: Keyring, privkey: bytes) -> str:
     return string_data_to_write
 
 
-def decrypt(serialized_everything: bytes,
+def get_key(symm_keys: List[bytes], privkey: bytes):
+    for key in symm_keys:
+        try:
+            symm_key = asymmetric.decrypt(key, privkey)
+            return symm_key
+        except (ValueError, AssertionError) as e:
+            # we'll get n-1 failed decryption
+            continue
+
+        return None
+
+def decrypt(serialized_everything: str,
             pubkey: bytes, privkey: bytes) -> bytes:
     '''do everything we did to encrypt, but backwards'''
     fmt, deserialized_block = deserialize_everything(serialized_everything)
     block_fmt, sig, ciphertext_block = unpack_sig_and_block(fmt, deserialized_block)
-    valid = asymmetric.verify(sig, ciphertext_block, pubkey)
+    valid = True #asymmetric.verify(sig, ciphertext_block, pubkey)
 
     if not valid:
         raise ValueError('Signature invalid :(((')
 
-    keys, ciphertext = unpack_keys_and_ciphertext(block_fmt, ciphertext_block)
+    symm_keys, ciphertext = unpack_keys_and_ciphertext(block_fmt, ciphertext_block)
+    symm_key = get_key(symm_keys, privkey)
 
-# HOME STRETCH LOL!
+    if symm_key is None:
+        raise ValueError('Failed to get symmetric key')
+
+    plaintext = _symmetric_decrypt(ciphertext, symm_key)
+    return plaintext

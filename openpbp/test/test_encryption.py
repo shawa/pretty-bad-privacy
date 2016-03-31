@@ -79,10 +79,34 @@ class Test_encrypt(unittest.TestCase):
             self.assertTrue(ring.complete)
             self.ring = ring
 
+    @given(binary(min_size=1))
+    def test_get_key_good(self, symm_key):
+        symm_keys = self.ring.encrypt(symm_key)
+
+        for kp in self.alice, self.bob, self.carol, self.derek:
+            got_symm_key = encryption.get_key(symm_keys, kp.privkey)
+            self.assertIsNotNone(got_symm_key)
+            self.assertEqual(symm_key, got_symm_key)
+
+    @given(binary(min_size=3))
+    def test_get_key_bad(self, symm_key):
+        symm_keys = self.ring.encrypt(symm_key)
+
+        bad_privkey = asymmetric.gen_keypair().privkey
+        got_symm_key = encryption.get_key(symm_keys, bad_privkey)
+        self.assertIsNone(got_symm_key)
+
 
     @given(binary())
-    def test_that_it_works(self, plaintext):
-            string_to_write = encryption.encrypt(plaintext, self.ring, self.alice.privkey)
-            self.assertIsNotNone(strigng_to_write)
+    def test_encryption(self, plaintext):
+        string_to_write = encryption.encrypt(plaintext, self.ring, self.alice.privkey)
+        self.assertIsNotNone(string_to_write)
 
-    
+    @given(binary(min_size=1))
+    def test_encrypt_decrypt_inverts(self, plaintext):
+        ciphertext = encryption.encrypt(plaintext, self.ring,
+                                        self.alice.privkey)
+        got_plaintext = encryption.decrypt(ciphertext, self.alice.pubkey,
+                                           self.bob.privkey)
+        print(got_plaintext, plaintext)
+        self.assertEqual(plaintext, got_plaintext)
