@@ -17,14 +17,18 @@ import keyring
 import encryption
 
 def handle_decrypt(arguments):
+    _EXTENSION = '.pbp'
     privkey, pubkey = (open(arguments[key], 'r').read().encode('utf-8')
                        for key in ('<private_key>', '<origin_pubkey>'))
-    ciphertext_block = open(arguments['<ciphertext>'], 'r').read()
-    sig, serialized_group_block = encryption.deserialize_group_block(ciphertext_block)
-    plaintext = encryption.decrypt_message(privkey, pubkey, sig, serialized_group_block)
+    infile = arguments['<ciphertext>']
+    outfile = infile.split(_EXTENSION)[0]
+    if '.pbp' not in infile:
+        raise ValueError('Sanity check: Filename must end in{}'.format(_EXTENSION))
 
-    with open(arguments['<ciphertext>' + '.plain'], 'w') as o:
-        o.write(plaintext)
+    ciphertext = open(infile).read()
+    plaintext = encryption.decrypt(ciphertext, pubkey, privkey)
+    with open(outfile, 'wb') as f:
+        f.write(plaintext)
 
 def handle_encrypt(arguments):
     privkey_file = arguments['<private_key>']
@@ -39,11 +43,12 @@ def handle_encrypt(arguments):
         raise ValueError('Incomplete keyring given')
 
     privkey = open(privkey_file, 'r').read().encode('utf-8')
-    plaintext = open(infile, 'r').read().encode('utf-8')
-    sig, ciphertext = encryption.encrypt_message(ring, privkey, plaintext)
+    plaintext = open(infile, 'rb').read()
+    ciphertext = encryption.encrypt(plaintext, ring, privkey)
 
-    with open(arguments['<plaintext>'] + '.pbp', 'w') as o:
-        o.write(encryption.serialize_message(sig, ciphertext))
+    with open(infile + '.pbp', 'w') as f:
+        f.write(ciphertext)
+
 
 def handle_keypair(arguments):
     import asymmetric
