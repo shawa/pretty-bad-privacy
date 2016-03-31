@@ -5,3 +5,7 @@ env
 openpbp/keys
 openpbp/files
 **/*.json
+
+data
+
+**/.hypothesis
