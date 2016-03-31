@@ -1,9 +1,10 @@
 '''
 Usage:
     pbp keypair <outfile>
-    pbp keyring create <keys>...
-    pbp keyring sign <keyring_file> <privkey_file>
-    pbp keyring complete <keyring_file> <signature_names>...
+    pbp keyring create <outfile> <keys>...
+    pbp keyring sign <outfile> <keyring_file> <privkey_file>
+    pbp keyring complete <outfile> <keyring_file> <signature_names>...
+    pbp keyring verify <keyring_file>
     pbp encrypt <private_key> <keyring_file> <plaintext>
     pbp decrypt <private_key> <origin_pubkey> <ciphertext>
 
@@ -46,7 +47,8 @@ def handle_encrypt(arguments):
 
 def handle_keypair(arguments):
     import asymmetric
-    private_outfile = arguments['<outfile>']
+    base_name = arguments['<outfile>']
+    private_outfile = base_name + '.pem'
     public_outfile = private_outfile + '.pub'
 
     privkey, pubkey = asymmetric.gen_keypair()
@@ -60,47 +62,70 @@ def handle_keypair(arguments):
 def handle_keyring(arguments):
     def create():
         key_names = arguments['<keys>']
-        pubkey_names = [key_name + '.pub' for key_name in key_names]
-        signature_names = [key_name + '.sig' for key_name in key_names]
-
-        keys = [open(pubkey_name, 'r').read()
-                for pubkey_name in pubkey_names]
+        outfile = arguments['<outfile>']
+        keys = [open(key_name, 'r').read()
+                for key_name in key_names]
 
         partial_ring = {'keys' : keys, 'sigs': []}
-        json.dump(partial_ring, sys.stdout)
+        with open(outfile, 'w') as f:
+            json.dump(partial_ring, f, indent=4, sort_keys=True)
 
     def sign():
         keyring_file = arguments['<keyring_file>']
         privkey_file = arguments['<privkey_file>']
+        outfile = arguments['<outfile>']
+
         keyring_data = open(keyring_file, 'r').read()
         privkey_pem = open(privkey_file).read().encode('utf-8')
+
         ring = keyring.Keyring.from_json(keyring_data)
         sig = ring.signature(privkey_pem, fmt=str)
-        with open(privkey_file + '.sig', 'w') as f:
+
+        with open(outfile, 'w') as f:
             f.write(sig)
 
     def complete():
         keyring_file = arguments['<keyring_file>']
         sig_names = arguments['<signature_names>']
+        outfile = arguments['<outfile>']
         keyring_data = {
             'keys': [key.encode('utf-8') for key in
                      json.load(open(keyring_file, 'r'))['keys']],
-            'sigs': [open(sig_name + '.sig', 'r').read()
+            'sigs': [open(sig_name, 'r').read()
                      for sig_name in sig_names],
         }
 
         ring = keyring.Keyring(**keyring_data)
         if not ring.complete():
-            raise ValueError('Invalid signature/key data')
+            raise ValueError('Invalid Keyring')
 
-        print(ring.to_json())
+        with open(outfile, 'w') as f:
+            out = json.loads(ring.to_json())
+            json.dump(out, f, indent=4, sort_keys=True)
+
+    def verify():
+        keyring_file = arguments['<keyring_file>']
+        outfile = arguments['<outfile>']
+        with open(keyring_file, 'r') as f:
+            ring = json.load(f)
+            ring_data = {
+                'keys': [key.encode('utf-8') for key in ring['keys']],
+                'sigs': ring['sigs'],
+            }
+
+            ring = keyring.Keyring(**ring_data)
+
+        print('{}alid keyring given'
+               .format('V' if ring.complete() else 'Inv'))
 
     if arguments['create']:
         create()
-    if arguments['complete']:
+    elif arguments['complete']:
         complete()
     elif arguments['sign']:
         sign()
+    elif arguments['verify']:
+        verify()
 
 
 HANDLER = {
