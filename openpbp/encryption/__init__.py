@@ -90,7 +90,7 @@ def decrypt(serialized_everything: str,
     fmt, deserialized_block = deserialize_everything(serialized_everything)
     block_fmt, sig, ciphertext_block = unpack_sig_and_block(fmt, deserialized_block)
     valid = True #asymmetric.verify(sig, ciphertext_block, pubkey)
-    # TODO: Why is the signature invalid?
+    # TODO: Why is the signature invalid? :(
 
     if not valid:
         raise ValueError('Signature invalid :(((')
