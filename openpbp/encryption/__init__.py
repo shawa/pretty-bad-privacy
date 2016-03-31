@@ -89,8 +89,9 @@ def decrypt(serialized_everything: str,
     '''do everything we did to encrypt, but backwards'''
     fmt, deserialized_block = deserialize_everything(serialized_everything)
     block_fmt, sig, ciphertext_block = unpack_sig_and_block(fmt, deserialized_block)
-    valid = True #asymmetric.verify(sig, ciphertext_block, pubkey)
-    # TODO: Why is the signature invalid? :(
+    valid = asymmetric.verify(ciphertext_block, sig, pubkey)
+    #  (/^▽^)/ THE SIGNATURE WAS INVALID BECAUSE YOU HAD THE PARAMETERS
+    # IN THE WRONG ORDER!  \(^▽^\)
 
     if not valid:
         raise ValueError('Signature invalid :(((')
