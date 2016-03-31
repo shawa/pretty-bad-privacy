@@ -1,5 +1,5 @@
 '''
-Wrapper for PyCA's asymmetric crypto primitives, provides asymmetric 
+Wrapper for PyCA's asymmetric crypto primitives, provides asymmetric
 Keypair generation, signing/verification, encryption/decryption
 '''
 from typing import Tuple
@@ -42,6 +42,14 @@ def encrypt(message: bytes, pubkey: bytes) -> bytes:
 
 
 def decrypt(message: bytes, privkey: bytes) -> bytes:
+#    with open('declog_key', 'rb') as f:
+#        privkey = f.read()
+#        f.write(privkey)
+
+#    with open('declog_sesskey', 'rb') as f:
+#        message = f.read()
+#        f.write(message)
+
     private_key = _load_privkey(privkey)
     plaintext = private_key.decrypt(
         message,

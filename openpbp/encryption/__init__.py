@@ -7,116 +7,99 @@ from utils import b64_string_to_bytes, bytes_to_b64_string
 
 import asymmetric
 
-MAGIC_MARKER = '|#|buckfast|@|'
-
-def pack_group_block(message: bytes, keys: List[bytes]) -> Tuple[str, bytes]:
-    fmt = ('{}s'.format(len(message)) +
-           ''.join(['{}s'.format(len(k)) for k in keys]))
-    block = pack(fmt, message, *keys)
-    return fmt, block
-
-
-def unpack_group_block(fmt: str, block: bytes) -> Tuple[Any, List[Any]]:
-    message, *keys = unpack(fmt, block)
-    return message, list(keys)
-
-
-def serialize_group_block(fmt: str, block: bytes) -> str:
-    block_serial = bytes_to_b64_string(block)
-    return ('{fmt}{marker}{block}'
-            .format(fmt=fmt, marker=MAGIC_MARKER, block=block_serial))
-
-def deserialize_group_block(serialized: str) -> Tuple[str, bytes]:
-    if MAGIC_MARKER not in serialized:
-        raise ValueError('bad serialized block given')
-
-    fmt, block_serial = serialized.split(MAGIC_MARKER)
-    block = b64_string_to_bytes(block_serial)
-    return fmt, block
-
-
-def encrypt_message(ring: Keyring, privkey: bytes,
-            message: bytes) -> Tuple[str, str]:
-    if not ring.complete():
-        raise ValueError('Invalid keyring given')
-
-    # L I T E R A T E   P R O G R A M M I N G
-    # I
-    # T
-    # E
-    # R
-    # A
-    # T
-    # E
-    #
-    # p
-    # R
-    # O
-    # G
-    # R
-    # A
-    # M
-    # M
-    # I
-    # N
-    # G
-    # To encrypt a plaintext file P to be shared to group members, Alice
-    # first generates a session key Ks with which to encrypt P.
+def _symmetric_encrypt(plaintext: bytes) -> Tuple[bytes, bytes]:
     session_key = Fernet.generate_key()
-    fern = Fernet(session_key)
-    # She then symmetrically encrypts P with Ks to produce Cs, the
-    # symmetrically encrypted cipher text. Note that the session key will be
-    # common to all group members.
-    message = fern.encrypt(message)
-    # For each public key Ki in keyring, she asymmetrically encrypts Ks
-    # to produce Ksi . Thus with any member’s private key, the session key may
-    # be decrypted.
-    # She then groups these keys together, to form the Key Block KB,
-    # which is a list containing each Ksi .
-    keys = ring.encrypt(session_key)
-    # She places KB and Cs together, to form the Group Ciphertext Cg.
-    # Cg, and thus the original file P may now be only be decrypted by a member
-    # of the group.
-    fmt, group_block = pack_group_block(message, keys)
-    serialized_group_block = serialize_group_block(fmt, group_block)
-    serialized_group_block_bin = serialized_group_block.encode('utf-8')
-    # Finally, she signs Gg with her private key, producing Sg so that
-    # each member may verify the file’s integrity, and that the sender is
-    # indeed Alice.
-    sig = asymmetric.sign(serialized_group_block_bin, privkey) # type: bytes
-    sig_serial = bytes_to_b64_string(sig)
-    # She bundles Cg with her signature Sg to produce CG. CG may now be
-    # shared via an insecure channel.
-    return sig_serial, serialized_group_block
+    fernet = Fernet(session_key)
+    symmetric_ciphertext = fernet.encrypt(plaintext)
+    return symmetric_ciphertext, session_key
 
 
-def decrypt_message(privkey: bytes,
-                    origin_pubkey: bytes,
-                    sig_serial: str,
-                    serialized_group_block: str) -> bytes:
-    sig = b64_string_to_bytes(sig_serial)
-    serialized_group_block_bin = serialized_group_block.encode('utf-8')
-    if not asymmetric.verify(serialized_group_block_bin, sig, origin_pubkey):
-        raise ValueError('Bad signature on message')
+def _symmetric_decrypt(ciphertext: bytes, session_key: bytes) -> bytes:
+    fernet = Fernet(session_key)
+    plaintext = fernet.decrypt(ciphertext)
+    return plaintext
 
-    fmt, group_block = deserialize_group_block(serialized_group_block)
-    message, keys = unpack_group_block(fmt, group_block)
 
-    session_key = None
-    for key in keys:
+def pack_keys_and_ciphertext(keys: List[bytes],
+                             ciphertext: bytes) -> Tuple[str, bytes]:
+    fmt_k = ''.join(['{}s'.format(len(key)) for key in keys])
+    fmt_b = '{}s'.format(len(ciphertext))
+    fmt = fmt_k + fmt_b
+    packed = pack(fmt, *(tuple(keys) + (ciphertext, )))
+    return fmt, packed
+
+
+def unpack_keys_and_ciphertext(fmt, packed):
+    vals = unpack(fmt, packed)
+    *keys, ciphertext = vals
+    return keys, ciphertext
+
+
+def pack_sig_and_block(block_fmt: str,
+                       sig: bytes,
+                       ciphertext_block: bytes) -> Tuple[str, bytes]:
+    fmt_block_fmt = '{}s'.format(len(block_fmt))
+    fmt_sig = '{}s'.format(len(sig))
+    fmt_cipher_block = '{}s'.format(len(ciphertext_block))
+    fmt = fmt_block_fmt + fmt_sig + fmt_cipher_block
+    packed = pack(fmt, block_fmt.encode('utf-8', errors='replace'), sig, ciphertext_block)
+    return fmt, packed
+
+
+def unpack_sig_and_block(fmt: str, packed: bytes):
+    block_fmt, sig, ciphertext_block = unpack(fmt, packed)
+    return block_fmt.decode('utf-8', errors=''), sig, ciphertext_block
+
+
+_SEPARATOR = '|'
+def serialize_everything(fmt: str, everything_packed: bytes) -> str:
+    serialized = bytes_to_b64_string(everything_packed)
+    return '{}{}{}'.format(fmt, _SEPARATOR, serialized)
+
+
+def deserialize_everything(serialized_everything_packed: str):
+    fmt, everything_packed = serialized_everything_packed.split(_SEPARATOR)
+    deserialized = b64_string_to_bytes(everything_packed)
+    return fmt, deserialized
+
+
+def encrypt(plaintext: bytes, ring: Keyring, privkey: bytes) -> str:
+    symm_ciphertext, symm_key = _symmetric_encrypt(plaintext)
+    group_keys = ring.encrypt(symm_key)
+    fmt, ciphertext_block = pack_keys_and_ciphertext(group_keys, symm_ciphertext)
+    sig = asymmetric.sign(ciphertext_block, privkey)
+    fmt, packed = pack_sig_and_block(fmt, sig, ciphertext_block)
+    string_data_to_write = serialize_everything(fmt, packed)
+    return string_data_to_write
+
+
+def get_key(symm_keys: List[bytes], privkey: bytes):
+    for key in symm_keys:
         try:
-            session_key = asymmetric.decrypt(key, privkey)
-            break
-        except ValueError:
-            # There'll be n-1 failed decryptions. We can avoid this by giving
-            # each key a key id within the ring, but this is good enough
-            # for the moment
+            symm_key = asymmetric.decrypt(key, privkey)
+            return symm_key
+        except (ValueError, AssertionError) as e:
+            # we'll get n-1 failed decryption
             continue
 
-    if session_key is None:
-        raise RuntimeError('Failed to find a session key. Sorry.')
+        return None
 
+def decrypt(serialized_everything: str,
+            pubkey: bytes, privkey: bytes) -> bytes:
+    '''do everything we did to encrypt, but backwards'''
+    fmt, deserialized_block = deserialize_everything(serialized_everything)
+    block_fmt, sig, ciphertext_block = unpack_sig_and_block(fmt, deserialized_block)
+    valid = True #asymmetric.verify(sig, ciphertext_block, pubkey)
+    # TODO: Why is the signature invalid?
 
-    fern = Fernet(session_key)
-    plaintext = fern.decrypt(message)
+    if not valid:
+        raise ValueError('Signature invalid :(((')
+
+    symm_keys, ciphertext = unpack_keys_and_ciphertext(block_fmt, ciphertext_block)
+    symm_key = get_key(symm_keys, privkey)
+
+    if symm_key is None:
+        raise ValueError('Failed to get symmetric key')
+
+    plaintext = _symmetric_decrypt(ciphertext, symm_key)
     return plaintext

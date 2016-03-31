@@ -15,16 +15,15 @@ import json
 import keyring
 import encryption
 
-MAGIC_MARKER = '|#|ClubMate|@|'
-
 def handle_decrypt(arguments):
     privkey, pubkey = (open(arguments[key], 'r').read().encode('utf-8')
                        for key in ('<private_key>', '<origin_pubkey>'))
     ciphertext_block = open(arguments['<ciphertext>'], 'r').read()
-    sig, serialized_group_block = ciphertext_block.split(MAGIC_MARKER)
-    print(sig, serialized_group_block, sep='\n', file=sys.stderr)
+    sig, serialized_group_block = encryption.deserialize_group_block(ciphertext_block)
     plaintext = encryption.decrypt_message(privkey, pubkey, sig, serialized_group_block)
-    print(plaintext.encode('utf-8'))
+
+    with open(arguments['<ciphertext>' + '.plain'], 'w') as o:
+        o.write(plaintext)
 
 def handle_encrypt(arguments):
     privkey_file = arguments['<private_key>']
@@ -41,8 +40,9 @@ def handle_encrypt(arguments):
     privkey = open(privkey_file, 'r').read().encode('utf-8')
     plaintext = open(infile, 'r').read().encode('utf-8')
     sig, ciphertext = encryption.encrypt_message(ring, privkey, plaintext)
-    output = '{}{}{}'.format(sig, MAGIC_MARKER, ciphertext)
-    print(output)
+
+    with open(arguments['<plaintext>'] + '.pbp', 'w') as o:
+        o.write(encryption.serialize_message(sig, ciphertext))
 
 def handle_keypair(arguments):
     import asymmetric
