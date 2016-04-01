@@ -15,7 +15,12 @@ import sys
 import json
 import keyring
 import encryption
+import hashlib
 
+def shadigest(data: str) -> str:
+    return hashlib.sha512(data.encode('utf-8')).hexdigest()
+
+_HASH_SEP = '||'
 def handle_decrypt(arguments):
     _EXTENSION = '.pbp'
     privkey, pubkey = (open(arguments[key], 'r').read().encode('utf-8')
@@ -25,7 +30,10 @@ def handle_decrypt(arguments):
     if '.pbp' not in infile:
         raise ValueError('Sanity check: Filename must end in{}'.format(_EXTENSION))
 
-    ciphertext = open(infile).read()
+    digest, ciphertext = open(infile).read().split(_HASH_SEP)
+    if digest != shadigest(ciphertext):
+        raise ValueError('SHA-2 digest failed, someone may be doing something nasty!')
+
     plaintext = encryption.decrypt(ciphertext, pubkey, privkey)
     with open(outfile, 'wb') as f:
         f.write(plaintext)
@@ -45,8 +53,10 @@ def handle_encrypt(arguments):
     privkey = open(privkey_file, 'r').read().encode('utf-8')
     plaintext = open(infile, 'rb').read()
     ciphertext = encryption.encrypt(plaintext, ring, privkey)
+    digest = shadigest(ciphertext)
 
     with open(infile + '.pbp', 'w') as f:
+        f.write(digest + _HASH_SEP)
         f.write(ciphertext)
 
 
