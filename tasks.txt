@@ -1,4 +1,11 @@
 [x] Keyring generation and signature
 [x] Message encryption
-[ ] CLI
-[ ] GUI?
+[x] CLI
+    - it's really bad
+
+[ ] Better Module structure
+[ ] Sig and file structure
+[ ] Keys
+    [ ] Key IDs
+    [ ] Key import
+    [ ] Key trusting
