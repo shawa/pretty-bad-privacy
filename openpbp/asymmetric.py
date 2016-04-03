@@ -18,8 +18,8 @@ Keypair = namedtuple('Keypair', ['privkey', 'pubkey'])
 def _load_pubkey(pubkey_pem_data: bytes):
     return load_pem_public_key(
             pubkey_pem_data,
-            backend=default_backend(),
-    )
+            backend=default_backend()
+   )
 
 def _load_privkey(privkey_pem_data: bytes, password=None):
     return load_pem_private_key(
@@ -42,14 +42,6 @@ def encrypt(message: bytes, pubkey: bytes) -> bytes:
 
 
 def decrypt(message: bytes, privkey: bytes) -> bytes:
-#    with open('declog_key', 'rb') as f:
-#        privkey = f.read()
-#        f.write(privkey)
-
-#    with open('declog_sesskey', 'rb') as f:
-#        message = f.read()
-#        f.write(message)
-
     private_key = _load_privkey(privkey)
     plaintext = private_key.decrypt(
         message,

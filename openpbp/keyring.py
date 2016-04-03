@@ -12,9 +12,11 @@ class Keyring(object):
             raise ValueError('keys must be a list of bytes objects')
 
         self.keys = keys
+        # just `if sigs'
         self.sigs = sigs if sigs is not None else [] # type: List[str]
 
     def to_json(self) -> str:
+        # you could just make this a lambda
         def _stringify(l):
             return [member.decode('utf-8') for member in l]
         return json.dumps({'keys': _stringify(self.keys), 'sigs': self.sigs})
@@ -23,8 +25,10 @@ class Keyring(object):
     def from_json(cls, json_data: str):
         ring_dict = json.loads(json_data)
         ring_dict['keys'] = [key.encode('utf-8') for key in ring_dict['keys']]
+        # just call 'cls' instead of 'Keyring' here
         return Keyring(**ring_dict)
 
+    # Make this a property
     def _keystring(self) -> bytes:
         '''return a bytes of the concatenated keyring PEM data values'''
         return b''.join(self.keys)
@@ -42,6 +46,7 @@ class Keyring(object):
         else:
             return sig
 
+    # Make this a property
     def complete(self) -> bool:
         '''a complete keyring is a list of public keys, and a list of
         signatures of that list of public keys, one per public key'''

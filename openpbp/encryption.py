@@ -51,6 +51,7 @@ def unpack_sig_and_block(fmt: str, packed: bytes):
     return block_fmt.decode('utf-8', errors=''), sig, ciphertext_block
 
 
+# Move this constant to the top of the file. Please. Okay.
 _SEPARATOR = '|'
 def serialize_everything(fmt: str, everything_packed: bytes) -> str:
     serialized = bytes_to_b64_string(everything_packed)
@@ -63,6 +64,7 @@ def deserialize_everything(serialized_everything_packed: str):
     return fmt, deserialized
 
 
+# Revisit the name of this funk shin.
 def encrypt(plaintext: bytes, ring: Keyring, privkey: bytes) -> str:
     symm_ciphertext, symm_key = _symmetric_encrypt(plaintext)
     group_keys = ring.encrypt(symm_key)
@@ -94,12 +96,14 @@ def decrypt(serialized_everything: str,
     # IN THE WRONG ORDER!  \(^▽^\)
 
     if not valid:
+        # Not sure this is the correct exception to raise
         raise ValueError('Signature invalid :(((')
 
     symm_keys, ciphertext = unpack_keys_and_ciphertext(block_fmt, ciphertext_block)
     symm_key = get_key(symm_keys, privkey)
 
     if symm_key is None:
+        # Not sure this is the correct exception to raise
         raise ValueError('Failed to get symmetric key')
 
     plaintext = _symmetric_decrypt(ciphertext, symm_key)
