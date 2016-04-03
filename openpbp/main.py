@@ -15,48 +15,50 @@ import sys
 import json
 import keyring
 import encryption
+import asymmetric
 import hashlib
+
+_HASH_SEP = '||'
 
 def shadigest(data: str) -> str:
     return hashlib.sha512(data.encode('utf-8')).hexdigest()
 
-_HASH_SEP = '||'
-def handle_decrypt(arguments):
+
+def handle_decrypt(args):
     _EXTENSION = '.pbp'
 
     # I wouldn't use a comprehension here because it's difficult to read
-    privkey, pubkey = (open(arguments[key], 'r').read().encode('utf-8')
+    privkey, pubkey = (open(args[key], 'r').read().encode('utf-8')
                        for key in ('<private_key>', '<origin_pubkey>'))
 
 
-    infile = arguments['<ciphertext>']
+    infile = args['<ciphertext>']
     outfile = infile.split(_EXTENSION)[0]
     if '.pbp' not in infile:
         # space after "in"
         raise ValueError('Sanity check: Filename must end in{}'.format(_EXTENSION))
 
-    # you're not closing the filehandles here
-    # Use a contextmanager
-    digest, ciphertext = open(infile).read().split(_HASH_SEP)
-    if digest != shadigest(ciphertext):
-        raise ValueError('SHA-2 digest failed, someone may be doing something nasty!')
+    with open(infile, 'r') as f:
+        digest, ciphertext = f.read().split(_HASH_SEP)
+        if digest != shadigest(ciphertext):
+            raise ValueError('SHA-2 digest failed, someone may be doing something nasty!')
+        plaintext = encryption.decrypt(ciphertext, pubkey, privkey)
 
-    plaintext = encryption.decrypt(ciphertext, pubkey, privkey)
-    with open(outfile, 'wb') as f:
-        f.write(plaintext)
+        with open(outfile, 'wb') as f:
+            f.write(plaintext)
 
-def handle_encrypt(arguments):
+
+def handle_encrypt(args):
     # You should just call the argument 'args'
-    privkey_file = arguments['<private_key>']
-    keyring_file = arguments['<keyring_file>']
-    infile = arguments['<plaintext>']
+    privkey_file = args['<private_key>']
+    keyring_file = args['<keyring_file>']
+    infile = args['<plaintext>']
 
     keyring_data = json.load(open(keyring_file, 'r'))
     keyring_data['keys'] = [k.encode('utf-8') for k in keyring_data['keys']]
     ring = keyring.Keyring(**keyring_data)
 
-    # Make 'complete()' a property and rename it 'is_complete'
-    if not ring.complete():
+    if not ring.is_complete:
         raise ValueError('Incomplete keyring given')
 
     privkey = open(privkey_file, 'r').read().encode('utf-8')
@@ -69,10 +71,8 @@ def handle_encrypt(arguments):
         f.write(ciphertext)
 
 
-def handle_keypair(arguments):
-    # Don't do the import in the function scope
-    import asymmetric
-    base_name = arguments['<outfile>']
+def handle_keypair(args):
+    base_name = args['<outfile>']
     private_outfile = base_name + '.pem'
     public_outfile = private_outfile + '.pub'
 
@@ -84,10 +84,10 @@ def handle_keypair(arguments):
         f.write(pubkey.decode('utf-8'))
 
 
-def handle_keyring(arguments):
+def handle_keyring(args):
     def create():
-        key_names = arguments['<keys>']
-        outfile = arguments['<outfile>']
+        key_names = args['<keys>']
+        outfile = args['<outfile>']
         keys = [open(key_name, 'r').read()
                 for key_name in key_names]
 
@@ -96,9 +96,9 @@ def handle_keyring(arguments):
             json.dump(partial_ring, f, indent=4, sort_keys=True)
 
     def sign():
-        keyring_file = arguments['<keyring_file>']
-        privkey_file = arguments['<privkey_file>']
-        outfile = arguments['<outfile>']
+        keyring_file = args['<keyring_file>']
+        privkey_file = args['<privkey_file>']
+        outfile = args['<outfile>']
 
         keyring_data = open(keyring_file, 'r').read()
         privkey_pem = open(privkey_file).read().encode('utf-8')
@@ -110,9 +110,9 @@ def handle_keyring(arguments):
             f.write(sig)
 
     def complete():
-        keyring_file = arguments['<keyring_file>']
-        sig_names = arguments['<signature_names>']
-        outfile = arguments['<outfile>']
+        keyring_file = args['<keyring_file>']
+        sig_names = args['<signature_names>']
+        outfile = args['<outfile>']
         keyring_data = {
             'keys': [key.encode('utf-8') for key in
                      json.load(open(keyring_file, 'r'))['keys']],
@@ -121,7 +121,7 @@ def handle_keyring(arguments):
         }
 
         ring = keyring.Keyring(**keyring_data)
-        if not ring.complete():
+        if not ring.is_complete:
             raise ValueError('Invalid Keyring')
 
         with open(outfile, 'w') as f:
@@ -129,8 +129,8 @@ def handle_keyring(arguments):
             json.dump(out, f, indent=4, sort_keys=True)
 
     def verify():
-        keyring_file = arguments['<keyring_file>']
-        outfile = arguments['<outfile>']
+        keyring_file = args['<keyring_file>']
+        outfile = args['<outfile>']
         with open(keyring_file, 'r') as f:
             ring = json.load(f)
             ring_data = {
@@ -141,15 +141,15 @@ def handle_keyring(arguments):
             ring = keyring.Keyring(**ring_data)
 
         print('{}alid keyring given'
-               .format('V' if ring.complete() else 'Inv'))
+               .format('V' if ring.is_complete else 'Inv'))
 
-    if arguments['create']:
+    if args['create']:
         create()
-    elif arguments['complete']:
+    elif args['complete']:
         complete()
-    elif arguments['sign']:
+    elif args['sign']:
         sign()
-    elif arguments['verify']:
+    elif args['verify']:
         verify()
 
 
@@ -161,8 +161,7 @@ HANDLER = {
 }
 
 if __name__ == '__main__':
-    # What is this shitheaditty
-    arguments = docopt(__doc__, version='Naval Fate 2.0')
+    args = docopt(__doc__, version='Naval Fate 2.0')
     for action in ('decrypt', 'encrypt', 'keypair', 'keyring'):
-        if arguments[action]:
-            HANDLER[action](arguments)
+        if args[action]:
+            HANDLER[action](args)

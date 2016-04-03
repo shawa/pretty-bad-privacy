@@ -76,7 +76,7 @@ class Test_encrypt(unittest.TestCase):
                     for kp in (self.alice, self.bob, self.carol, self.derek)]
 
             ring.sigs = sigs
-            self.assertTrue(ring.complete)
+            self.assertTrue(ring.is_complete)
             self.ring = ring
 
     @given(binary(min_size=1))

@@ -7,6 +7,10 @@ from utils import b64_string_to_bytes, bytes_to_b64_string
 
 import asymmetric
 
+
+_SEPARATOR = '|'
+
+
 def _symmetric_encrypt(plaintext: bytes) -> Tuple[bytes, bytes]:
     session_key = Fernet.generate_key()
     fernet = Fernet(session_key)
@@ -51,8 +55,6 @@ def unpack_sig_and_block(fmt: str, packed: bytes):
     return block_fmt.decode('utf-8', errors=''), sig, ciphertext_block
 
 
-# Move this constant to the top of the file. Please. Okay.
-_SEPARATOR = '|'
 def serialize_everything(fmt: str, everything_packed: bytes) -> str:
     serialized = bytes_to_b64_string(everything_packed)
     return '{}{}{}'.format(fmt, _SEPARATOR, serialized)
@@ -96,15 +98,13 @@ def decrypt(serialized_everything: str,
     # IN THE WRONG ORDER!  \(^▽^\)
 
     if not valid:
-        # Not sure this is the correct exception to raise
-        raise ValueError('Signature invalid :(((')
+        raise RuntimeError('Signature invalid :(((')
 
     symm_keys, ciphertext = unpack_keys_and_ciphertext(block_fmt, ciphertext_block)
     symm_key = get_key(symm_keys, privkey)
 
     if symm_key is None:
-        # Not sure this is the correct exception to raise
-        raise ValueError('Failed to get symmetric key')
+        raise RuntimeError('Failed to get symmetric key')
 
     plaintext = _symmetric_decrypt(ciphertext, symm_key)
     return plaintext

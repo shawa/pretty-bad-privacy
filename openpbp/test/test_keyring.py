@@ -19,7 +19,7 @@ class TestKeyring(unittest.TestCase):
         ring = keyring.Keyring([kp.pubkey for kp in keypairs])
         alice = keypairs[0]
         ring.sigs = [ring.signature(kp.privkey, fmt=str) for kp in keypairs]
-        self.assertTrue(ring.complete())
+        self.assertTrue(ring.is_complete)
 
     def test_encryption(self):
         keypairs = [asymmetric.gen_keypair() for _ in range(3)]

@@ -12,8 +12,7 @@ class Keyring(object):
             raise ValueError('keys must be a list of bytes objects')
 
         self.keys = keys
-        # just `if sigs'
-        self.sigs = sigs if sigs is not None else [] # type: List[str]
+        self.sigs = sigs if sigs else [] # type: List[str]
 
     def to_json(self) -> str:
         # you could just make this a lambda
@@ -25,8 +24,7 @@ class Keyring(object):
     def from_json(cls, json_data: str):
         ring_dict = json.loads(json_data)
         ring_dict['keys'] = [key.encode('utf-8') for key in ring_dict['keys']]
-        # just call 'cls' instead of 'Keyring' here
-        return Keyring(**ring_dict)
+        return cls(**ring_dict)
 
     # Make this a property
     def _keystring(self) -> bytes:
@@ -46,8 +44,8 @@ class Keyring(object):
         else:
             return sig
 
-    # Make this a property
-    def complete(self) -> bool:
+    @property
+    def is_complete(self) -> bool:
         '''a complete keyring is a list of public keys, and a list of
         signatures of that list of public keys, one per public key'''
         if not len(self.sigs) is len(self.keys):
@@ -64,5 +62,5 @@ class Keyring(object):
 
     def encrypt(self, message: bytes) -> List[bytes]:
         '''encrypt a given message for each recipient in the key list'''
-        assert self.complete()
+        assert self.is_complete
         return [asymmetric.encrypt(message, key) for key in self.keys]
