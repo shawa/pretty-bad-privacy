@@ -23,13 +23,20 @@ def shadigest(data: str) -> str:
 _HASH_SEP = '||'
 def handle_decrypt(arguments):
     _EXTENSION = '.pbp'
+
+    # I wouldn't use a comprehension here because it's difficult to read
     privkey, pubkey = (open(arguments[key], 'r').read().encode('utf-8')
                        for key in ('<private_key>', '<origin_pubkey>'))
+
+
     infile = arguments['<ciphertext>']
     outfile = infile.split(_EXTENSION)[0]
     if '.pbp' not in infile:
+        # space after "in"
         raise ValueError('Sanity check: Filename must end in{}'.format(_EXTENSION))
 
+    # you're not closing the filehandles here
+    # Use a contextmanager
     digest, ciphertext = open(infile).read().split(_HASH_SEP)
     if digest != shadigest(ciphertext):
         raise ValueError('SHA-2 digest failed, someone may be doing something nasty!')
@@ -39,6 +46,7 @@ def handle_decrypt(arguments):
         f.write(plaintext)
 
 def handle_encrypt(arguments):
+    # You should just call the argument 'args'
     privkey_file = arguments['<private_key>']
     keyring_file = arguments['<keyring_file>']
     infile = arguments['<plaintext>']
@@ -47,6 +55,7 @@ def handle_encrypt(arguments):
     keyring_data['keys'] = [k.encode('utf-8') for k in keyring_data['keys']]
     ring = keyring.Keyring(**keyring_data)
 
+    # Make 'complete()' a property and rename it 'is_complete'
     if not ring.complete():
         raise ValueError('Incomplete keyring given')
 
@@ -61,6 +70,7 @@ def handle_encrypt(arguments):
 
 
 def handle_keypair(arguments):
+    # Don't do the import in the function scope
     import asymmetric
     base_name = arguments['<outfile>']
     private_outfile = base_name + '.pem'
@@ -151,6 +161,7 @@ HANDLER = {
 }
 
 if __name__ == '__main__':
+    # What is this shitheaditty
     arguments = docopt(__doc__, version='Naval Fate 2.0')
     for action in ('decrypt', 'encrypt', 'keypair', 'keyring'):
         if arguments[action]:
