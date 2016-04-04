@@ -15,9 +15,9 @@ class Keyring(object):
         self.sigs = sigs if sigs else [] # type: List[str]
 
     def to_json(self) -> str:
-        # you could just make this a lambda
         def _stringify(l):
             return [member.decode('utf-8') for member in l]
+
         return json.dumps({'keys': _stringify(self.keys), 'sigs': self.sigs})
 
     @classmethod
@@ -26,7 +26,7 @@ class Keyring(object):
         ring_dict['keys'] = [key.encode('utf-8') for key in ring_dict['keys']]
         return cls(**ring_dict)
 
-    # Make this a property
+    @property
     def _keystring(self) -> bytes:
         '''return a bytes of the concatenated keyring PEM data values'''
         return b''.join(self.keys)
@@ -37,7 +37,7 @@ class Keyring(object):
         assert fmt in [str, bytes]
 
         nonce = os.urandom(64)
-        sig = asymmetric.sign(self._keystring(), private_key)
+        sig = asymmetric.sign(self._keystring, private_key)
 
         if fmt is str:
             return bytes_to_b64_string(sig)
@@ -56,7 +56,7 @@ class Keyring(object):
     def _verify_sig(self, signature: str) -> bool:
         ''' verify that a signature is valid under one of the keys in the public key list '''
         sig = b64_string_to_bytes(signature) # type: bytes
-        concat = self._keystring()
+        concat = self._keystring
         return any(asymmetric.verify(concat, sig, pubkey)
                    for pubkey in self.keys)
 

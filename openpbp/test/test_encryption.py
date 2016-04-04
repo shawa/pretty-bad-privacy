@@ -99,15 +99,15 @@ class Test_encrypt(unittest.TestCase):
 
     @given(binary())
     def test_encryption(self, plaintext):
-        string_to_write = encryption.encrypt(plaintext, self.ring, self.alice.privkey)
+        string_to_write = encryption.encrypt_and_pack(plaintext, self.ring, self.alice.privkey)
         self.assertIsNotNone(string_to_write)
 
     @given(binary(min_size=1))
     def test_encrypt_decrypt_inverts(self, plaintext):
-        ciphertext = encryption.encrypt(plaintext, self.ring,
+        ciphertext = encryption.encrypt_and_pack(plaintext, self.ring,
                                         self.alice.privkey)
         for kp in (self.alice, self.bob, self.carol, self.derek):
-            got_plaintext = encryption.decrypt(ciphertext, self.alice.pubkey,
+            got_plaintext = encryption.unpack_and_decrypt(ciphertext, self.alice.pubkey,
                                                kp.privkey)
             self.assertEqual(plaintext, got_plaintext)
 
@@ -117,10 +117,10 @@ class Test_encrypt(unittest.TestCase):
         cipherfilename = '{}.enc'.format(plainfilename)
         with open(plainfilename, 'rb') as pf, open(cipherfilename, 'w') as cf:
             plaintext = pf.read()
-            ciphertext = encryption.encrypt(plaintext, self.ring, self.alice.privkey)
+            ciphertext = encryption.encrypt_and_pack(plaintext, self.ring, self.alice.privkey)
             cf.write(ciphertext)
 
         with open(cipherfilename, 'r') as cf, open(plainfilename + 'got.png', 'wb') as pf:
             got_plain = cf.read()
-            plaintext = encryption.decrypt(ciphertext, self.alice.pubkey, self.bob.privkey)
+            plaintext = encryption.unpack_and_decrypt(ciphertext, self.alice.pubkey, self.bob.privkey)
             pf.write(plaintext)

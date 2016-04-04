@@ -66,8 +66,7 @@ def deserialize_everything(serialized_everything_packed: str):
     return fmt, deserialized
 
 
-# Revisit the name of this funk shin.
-def encrypt(plaintext: bytes, ring: Keyring, privkey: bytes) -> str:
+def encrypt_and_pack(plaintext: bytes, ring: Keyring, privkey: bytes) -> str:
     symm_ciphertext, symm_key = _symmetric_encrypt(plaintext)
     group_keys = ring.encrypt(symm_key)
     fmt, ciphertext_block = pack_keys_and_ciphertext(group_keys, symm_ciphertext)
@@ -88,7 +87,7 @@ def get_key(symm_keys: List[bytes], privkey: bytes):
 
         return None
 
-def decrypt(serialized_everything: str,
+def unpack_and_decrypt(serialized_everything: str,
             pubkey: bytes, privkey: bytes) -> bytes:
     '''do everything we did to encrypt, but backwards'''
     fmt, deserialized_block = deserialize_everything(serialized_everything)

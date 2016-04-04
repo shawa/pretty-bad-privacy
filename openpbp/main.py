@@ -26,30 +26,26 @@ def shadigest(data: str) -> str:
 
 def handle_decrypt(args):
     _EXTENSION = '.pbp'
-
-    # I wouldn't use a comprehension here because it's difficult to read
-    privkey, pubkey = (open(args[key], 'r').read().encode('utf-8')
-                       for key in ('<private_key>', '<origin_pubkey>'))
-
-
     infile = args['<ciphertext>']
+
+    privkey = open(args['<private_key>'], 'r').read().encode('utf-8')
+    pubkey = open(args['<origin_pubkey>'], 'r').read().encode('utf-8')
     outfile = infile.split(_EXTENSION)[0]
+
     if '.pbp' not in infile:
-        # space after "in"
-        raise ValueError('Sanity check: Filename must end in{}'.format(_EXTENSION))
+        raise ValueError('Sanity check: Filename must end in {}'.format(_EXTENSION))
 
     with open(infile, 'r') as f:
         digest, ciphertext = f.read().split(_HASH_SEP)
         if digest != shadigest(ciphertext):
             raise ValueError('SHA-2 digest failed, someone may be doing something nasty!')
-        plaintext = encryption.decrypt(ciphertext, pubkey, privkey)
+        plaintext = encryption.unpack_and_decrypt(ciphertext, pubkey, privkey)
 
         with open(outfile, 'wb') as f:
             f.write(plaintext)
 
 
 def handle_encrypt(args):
-    # You should just call the argument 'args'
     privkey_file = args['<private_key>']
     keyring_file = args['<keyring_file>']
     infile = args['<plaintext>']
@@ -63,7 +59,7 @@ def handle_encrypt(args):
 
     privkey = open(privkey_file, 'r').read().encode('utf-8')
     plaintext = open(infile, 'rb').read()
-    ciphertext = encryption.encrypt(plaintext, ring, privkey)
+    ciphertext = encryption.encrypt_and_pack(plaintext, ring, privkey)
     digest = shadigest(ciphertext)
 
     with open(infile + '.pbp', 'w') as f:
