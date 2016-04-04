@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3
 '''
 Usage:
     pbp keypair <outfile>
